@@ -1,10 +1,21 @@
+require('dotenv').config();
+//Imorting
 const express = require("express");
-
+const mongoose = require("mongoose");
+//Database
 const database = require("./database/index");
-
+//Initialize express
 const advent =express();
-
+//Configure
 advent.use(express.json());
+//Database connection
+
+mongoose.connect(process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false,
+  useCreateIndex: true
+}).then(()=>console.log("connection is done"));
 
 /*
 Route           /
@@ -424,4 +435,4 @@ advent.delete("/delete/publication/:isbn/:id",(req,res)=>{
     return res.json({book:database.books,pub:database.publications,message:"book is deleted"})
 })
 
-advent.listen(3200,()=> console.log("server is fine"));
+advent.listen(3200,()=>console.log("server is fine"));

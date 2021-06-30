@@ -313,4 +313,115 @@ advent.put("/publication/update/book/:id",(req,res)=>{
     })
     return res.json({pub:database.publications,books:database.books,message:"updated"})
 })
+
+ /*
+Route           /delete/book/
+Description     delete new book
+Access          PUBLIC
+Parameters      isbn
+Method          delete
+*/
+
+advent.delete("/delete/book/:isbn",(req,res)=>{
+const specificBook=database.books.filter(
+    (book)=>book.ISBN!==req.params.isbn)
+    database.books=specificBook
+    return res.json({book:database.books,message:"deleted"})
+})
+
+ /*
+Route           /delete/book/
+Description     delete a author from book
+Access          PUBLIC
+Parameters      isbn,id
+Method          delete
+*/
+
+advent.delete("/delete/book/:isbn/:id",(req,res)=>{
+    database.books.forEach((book)=>{
+        if(book.ISBN===req.params.isbn){
+            const newAuthor=book.authors.filter(
+                (author)=>author!==parseInt(req.params.id)
+            );
+            book.authors=newAuthor;
+            return;
+        }
+    })
+    database.authors.forEach((author)=>{
+        if(author.id===parseInt(req.params.id)){
+            const newBook=author.books.filter((book)=>book!==req.params.isbn)
+            author.books=newBook
+            return;
+        }
+    })
+    return res.json({book:database.books,author:database.authors,message:"deleted"})
+})
+  
+ /*
+Route           /delete/author/
+Description     delete author
+Access          PUBLIC
+Parameters      id
+Method          delete
+*/
+
+advent.delete("/delete/author/:id",(req,res)=>{
+    database.authors.forEach((author)=>{
+        if(author.id===parseInt(req.params.id)){
+            const authorsList=database.authors.filter(
+                (author)=>author.id!==parseInt(req.params.id)
+            )
+            database.authors=authorsList
+            return;
+        }
+    })
+return res.json({authors:database.authors,message:"deleted"})
+})
+
+ /*
+Route           /delete/publication/
+Description     delete a publication 
+Access          PUBLIC
+Parameters      id
+Method          delete
+*/
+
+advent.delete("/delete/publication/:id",(req,res)=>{
+    database.publications.forEach((publication)=>{
+        if(publication.id===parseInt(req.params.id)){
+            const newPublication=database.publications.filter(
+                (publication)=>publication.id!== parseInt(req.params.id))
+                database.publications=newPublication;
+                return;
+        }
+    })
+    return res.json({pub:database.publications,message:"pub is deleted"})
+})
+
+ /*
+Route           /delete/publication/
+Description     delete book from a publication 
+Access          PUBLIC
+Parameters      isbn,id
+Method          delete
+*/
+
+advent.delete("/delete/publication/:isbn/:id",(req,res)=>{
+    database.publications.forEach((publication)=>{
+        if(publication.id===parseInt(req.params.id)){
+            const newpub=publication.books.filter(
+                (book)=>book!==req.params.isbn)
+                publication.books=newpub;
+                return;
+        }
+    })
+    database.books.forEach((book)=>{
+        if(book.ISBN===req.params.isbn){
+            book.publication=0
+            return;
+        }
+    })
+    return res.json({book:database.books,pub:database.publications,message:"book is deleted"})
+})
+
 advent.listen(3200,()=> console.log("server is fine"));

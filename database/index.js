@@ -28,9 +28,7 @@ const books = [   {
             {
                 "id": 3,
                 "name": "abdur",
-                "books": [
-                    
-                ]
+                "books": [ ]
             }];  
             
     const publications = [   {     

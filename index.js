@@ -4,12 +4,16 @@ const express = require("express");
 const mongoose = require("mongoose");
 //Database
 const database = require("./database/index");
+
+const BookModel = require("./database/book");
+const AuthorModel = require("./database/author");
+const PublicationModel = require("./database/publication");
 //Initialize express
 const advent =express();
 //Configure
 advent.use(express.json());
-//Database connection
 
+//Database connection
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -26,8 +30,9 @@ Method          get
 */
 
 
-advent.get("/" , (req,res) => {
-return res.json({"books" : database.books});
+advent.get("/" , async (req,res) => {
+    const sepBook= await BookModel.find();
+return res.json({"books":sepBook});
 });
 
 
@@ -39,10 +44,9 @@ Parameters      isbn
 Method          get
 */
 
-advent.get("/is/:isbn",(req,res)=>{
-    const distinctbook = database.books.filter(
-        (book)=> book.ISBN===req.params.isbn);
-        if(distinctbook.length===0){
+advent.get("/is/:isbn",async (req,res)=>{
+    const distinctbook = await BookModel.findOne({ISBN:req.params.isbn});
+        if(!distinctbook){
             return res.json({"error":"no book found deepak"});
         }
         return res.json({"books":distinctbook});
@@ -56,10 +60,9 @@ Parameters      category
 Method          get
 */
 
-advent.get("/c/:category",(req,res)=>{
-    const distinctbook = database.books.filter(
-        (book)=> book.category.includes(req.params.category));
-        if(distinctbook.length===0){
+advent.get("/c/:category",async(req,res)=>{
+    const distinctbook = await BookModel.find({category:req.params.category});
+        if(!distinctbook){
             return res.json({"error":"no book found"});
         }
         return res.json({"books":distinctbook});
@@ -73,13 +76,12 @@ Parameters      author
 Method          get
 */
 
-advent.get("/a/:author",(req,res)=>{
+advent.get("/a/:author",async (req,res)=>{
     
    
-    const distinctbook = database.books.filter(
-         (book)=> book.authors.includes(Number(req.params.author)))
+    const distinctbook =await BookModel.find({authors:parseInt(req.params.author)})
                
-        if(distinctbook.length===0){
+        if(!distinctbook){
             return res.json({"error":"no book found"});      
         }
         return res.json({books:distinctbook});
@@ -93,8 +95,9 @@ Parameters      none
 Method          get
 */
 
-advent.get("/author",(req,res)=>{
-    return res.json({"authors":database.authors})
+advent.get("/author",async (req,res)=>{
+    const allauthors=await AuthorModel.find();
+    return res.json({"authors":allauthors})
 });
 
 
@@ -106,12 +109,10 @@ Parameters      :id
 Method          get
 */
 
-advent.get("/author/get/:id",(req,res)=>{
-    const specificBook = database.authors.filter(
-        (author)=>author.id == Number(req.params.id)
-        
-    )
-    if(specificBook.length===0){
+advent.get("/author/get/:id", async (req,res)=>{
+    const specificBook = await AuthorModel.findOne({id:parseInt(req.params.id)})
+    
+    if(!specificBook){
         return res.json({"error":"no author found"})
     }
     return res.json({"author":specificBook});
@@ -124,10 +125,9 @@ Access          PUBLIC
 Parameters      isbn
 Method          get
 */
-advent.get("/author/:isbn",(req,res)=>{
-    const specificBook= database.authors.filter(
-        (author)=>author.books== req.params.isbn);
-    if(specificBook.length===0){
+advent.get("/author/:isbn",async (req,res)=>{
+    const specificBook= await AuthorModel.find({books:req.params.isbn})
+    if(!specificBook){
         return res.json({"error":"no author found here"})
     }
     return res.json({"author":specificBook});
@@ -142,8 +142,9 @@ Parameters      none
 Method          get
 */
 
-advent.get("/publications",(req,res)=>{
-    return res.json({"publication" : database.publications})
+advent.get("/publications", async (req,res)=>{
+    const allpublications= await PublicationModel.find();
+    return res.json({"publication" : allpublications})
 });
 
 /*
@@ -154,11 +155,10 @@ Parameters      id
 Method          get
 */
 
-advent.get("/publications/get/:id",(req,res)=>{
-    const pub=database.publications.filter(
-        (publication)=>publication.id===parseInt(req.params.id)
+advent.get("/publications/get/:id", async (req,res)=>{
+    const pub= await PublicationModel.findOne({id: parseInt(req.params.id)}
     )
-    if(pub.length===0){
+    if(!pub){
         return res.json({"error":"no publication"})
     }
     return res.json({"publication":pub})
@@ -172,10 +172,9 @@ Parameters      isbn
 Method          get
 */
 
-advent.get("/publications/:isbn",(req,res)=>{
-    const pub=database.publications.filter(
-        (publication)=>publication.books==req.params.isbn)
-        if(pub.length===0){
+advent.get("/publications/:isbn",async (req,res)=>{
+    const pub=await PublicationModel.find({books:req.params.isbn})
+    if(!pub){
             return res.json({"error":"no publications"})
         }
         return res.json({"publications":pub})
@@ -189,10 +188,10 @@ Parameters      none
 Method          post
 */
 
-advent.post("/book/new",(req,res)=>{
+advent.post("/book/new", async (req,res)=>{
     const {newBook} =req.body;
-    database.books.push(newBook);
-    return res.json({books:database.books,message:"new book added"})
+     await BookModel.create(newBook);
+    return res.json({message:"new book added"})
 })
 /*
 Route           /author/new
@@ -201,10 +200,10 @@ Access          PUBLIC
 Parameters      none
 Method          post
 */
-advent.post("/author/new",(req,res)=>{
+advent.post("/author/new",async (req,res)=>{
     const {newAuthor} =req.body;
-    database.authors.push(newAuthor);
-    return res.json({authors:database.authors,message:"new author added"})
+    await AuthorModel.create(newAuthor) ;
+    return res.json({message:"new author added"})
 
 })
 
@@ -216,10 +215,10 @@ Parameters      none
 Method          post
 */
 
-advent.post("/publication/new",(req,res)=>{
+advent.post("/publication/new", async (req,res)=>{
     const {newPublication}=req.body;
-    database.publications.push(newPublication)
-    return res.json({pub:database.publications,message:"new pub added"})
+   await PublicationModel.create(newPublication);
+    return res.json({message:"new pub added"})
 })
 
 /*

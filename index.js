@@ -443,7 +443,7 @@ advent.delete("/delete/publication/:isbn/:id", async(req,res)=>{
     const updatedBook= await BookModel.findOneAndUpdate({
         ISBN:req.params.isbn
     },{
-        publication=0
+        publication:0
     },{
         new:true
     })

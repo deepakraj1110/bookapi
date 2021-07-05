@@ -229,15 +229,18 @@ Parameters      isbn
 Method          put
 */
 
-advent.put("/book/update/:isbn",(req,res)=>{
-    database.books.forEach((book)=>{
-        if(book.ISBN===req.params.isbn){
-            book.title=req.body.newTitleupdate;
-            return;
+advent.put("/book/update/:isbn", async(req,res)=>{
+    const updatedBook= await BookModel.findOneAndUpdate(
+        {
+            ISBN : req.params.isbn        },
+        {
+           title:req.body.bookTitle
+        },
+        {
+            new : true 
         }
-    }
-    )
-    return res.json({book:database.books,message:"title Updated"})
+    );
+    return res.json({book:updatedBook,message:"title Updated"})
     })
 
  /*
@@ -248,18 +251,28 @@ Parameters      isbn
 Method          put
 */   
 
-advent.put("/book/update/author/:isbn",(req,res)=>{
-    database.books.forEach((book)=>{
-        if(book.ISBN===req.params.isbn){
-           return book.authors.push(req.body.newAuthor)
-         }
+advent.put("/book/update/author/:isbn", async(req,res)=>{
+    const updatedBook= await BookModel.findOneAndUpdate({ISBN:req.params.isbn},
+        {$addToSet:{
+            authors:req.body.newAuthor
+        },
+            
+    },
+    {
+        new : true
     });
-    database.authors.forEach((author)=>{
-        if(author.id===req.body.newAuthor){
-            return author.books.push(req.params.isbn)
-        }
-    });
-    return res.json({books:database.books,authors:database.authors,message:"author updated"})
+    const updatedAuthor=await AuthorModel.findOneAndUpdate({
+        id:req.body.newAuthor
+    },{
+        $addToSet:{
+            books:req.params.isbn
+        },
+    },{
+        new:true
+    })
+    
+ 
+    return res.json({books:updatedBook,authors:updatedAuthor,message:"author updated"})
     
 });
 
@@ -272,14 +285,16 @@ Parameters      id
 Method          put
 */  
 
-advent.put("/author/update/:id",(req,res)=>{
-    database.authors.forEach((author)=>{
-        if(author.id===parseInt(req.params.id)){
-            author.name=req.body.newName
-            return;
-        }
-    })
-    return res.json({author:database.authors,message:"name is updated"})
+advent.put("/author/update/:id",async (req,res)=>{
+        const updatedAuthor=await AuthorModel.findOneAndUpdate({
+            id:parseInt(req.params.id)
+        },{
+            name:req.body.newName
+        },{
+            new:true
+        })
+   
+    return res.json({author:updatedAuthor,message:"name is updated"})
 })
 
  /*
@@ -290,14 +305,17 @@ Parameters      id
 Method          put
 */  
 
-advent.put("/publication/update/:id",(req,res)=>{
-    database.publications.forEach((publication)=> {
-        if(publication.id===parseInt(req.params.id)){
-              publication.name=req.body.newPublication
-              return;
-        }
-    })
-    return res.json({pub:database.publications,message:'Name in pub updated'})
+advent.put("/publication/update/:id",async (req,res)=>{
+    const updatedPublication = await PublicationModel.findOneAndUpdate(
+        {
+            id:parseInt(req.params.id)
+        },{
+            name:req.body.newPublication
+        },{
+            new:true
+        })
+
+    return res.json({pub:updatedPublication,message:'Name in pub updated'})
 })
 
  /*
@@ -308,20 +326,27 @@ Parameters      id
 Method          put
 */
 
-advent.put("/publication/update/book/:id",(req,res)=>{
-    database.publications.forEach((publication)=>{
-        if(publication.id===parseInt(req.params.id)){
-            return publication.books.push(req.body.newBook)
-        }
+advent.put("/publication/update/book/:id", async(req,res)=>{
+    const updatedPublication= await PublicationModel.findOneAndUpdate({
+        id:parseInt(req.params.id)
+    },{
+        $addToSet:{
+            books:req.body.newBook
+        },
+    },{
+        new:true
+    })
+   
 
+    const updatedBook= await BookModel.findOneAndUpdate({
+        ISBN : req.body.newBook
+    },{
+        publication:req.params.id
+    },{
+        new:true
     })
-    database.books.forEach((book)=>{
-        if(book.ISBN===req.body.newBook){
-             book.publication=req.params.id
-             return;
-        }
-    })
-    return res.json({pub:database.publications,books:database.books,message:"updated"})
+   
+    return res.json({pub:updatedPublication,books:updatedBook,message:"updated"})
 })
 
  /*
@@ -332,11 +357,10 @@ Parameters      isbn
 Method          delete
 */
 
-advent.delete("/delete/book/:isbn",(req,res)=>{
-const specificBook=database.books.filter(
-    (book)=>book.ISBN!==req.params.isbn)
-    database.books=specificBook
-    return res.json({book:database.books,message:"deleted"})
+advent.delete("/delete/book/:isbn",async (req,res)=>{
+    const specificBook= await BookModel.findOneAndDelete({ISBN:req.params.isbn})
+    
+    return res.json({book:specificBook,message:"deleted"})
 })
 
  /*
@@ -347,24 +371,25 @@ Parameters      isbn,id
 Method          delete
 */
 
-advent.delete("/delete/book/:isbn/:id",(req,res)=>{
-    database.books.forEach((book)=>{
-        if(book.ISBN===req.params.isbn){
-            const newAuthor=book.authors.filter(
-                (author)=>author!==parseInt(req.params.id)
-            );
-            book.authors=newAuthor;
-            return;
-        }
+advent.delete("/delete/book/:isbn/:id",async (req,res)=>{
+    const updatedBook= await BookModel.findOneAndUpdate(
+        {ISBN:req.params.isbn
+        },{
+            $pull:{authors:parseInt(req.params.id)}
+        },{
+            new :true
+        })
+   
+    const updatedAuthor = await AuthorModel.findOneAndUpdate({
+        id:parseInt(req.params.id)
+    },{
+        $pull :{
+        books :req.params.isbn}
+    },{
+        new :true
     })
-    database.authors.forEach((author)=>{
-        if(author.id===parseInt(req.params.id)){
-            const newBook=author.books.filter((book)=>book!==req.params.isbn)
-            author.books=newBook
-            return;
-        }
-    })
-    return res.json({book:database.books,author:database.authors,message:"deleted"})
+       
+    return res.json({book:updatedBook,author:updatedAuthor,message:"deleted"})
 })
   
  /*
@@ -375,17 +400,12 @@ Parameters      id
 Method          delete
 */
 
-advent.delete("/delete/author/:id",(req,res)=>{
-    database.authors.forEach((author)=>{
-        if(author.id===parseInt(req.params.id)){
-            const authorsList=database.authors.filter(
-                (author)=>author.id!==parseInt(req.params.id)
-            )
-            database.authors=authorsList
-            return;
-        }
+advent.delete("/delete/author/:id",async(req,res)=>{
+    const updatedAuthor= await AuthorModel.findOneAndDelete({
+        id:parseInt(req.params.id)
     })
-return res.json({authors:database.authors,message:"deleted"})
+    
+return res.json({authors:updatedAuthor,message:"deleted"})
 })
 
  /*
@@ -396,16 +416,12 @@ Parameters      id
 Method          delete
 */
 
-advent.delete("/delete/publication/:id",(req,res)=>{
-    database.publications.forEach((publication)=>{
-        if(publication.id===parseInt(req.params.id)){
-            const newPublication=database.publications.filter(
-                (publication)=>publication.id!== parseInt(req.params.id))
-                database.publications=newPublication;
-                return;
-        }
+advent.delete("/delete/publication/:id",async (req,res)=>{
+    const updatedPublication= await PublicationModel.findOneAndDelete({
+        id:parseInt(req.params.id)
     })
-    return res.json({pub:database.publications,message:"pub is deleted"})
+   
+    return res.json({pub:updatedPublication,message:"pub is deleted"})
 })
 
  /*
@@ -416,22 +432,23 @@ Parameters      isbn,id
 Method          delete
 */
 
-advent.delete("/delete/publication/:isbn/:id",(req,res)=>{
-    database.publications.forEach((publication)=>{
-        if(publication.id===parseInt(req.params.id)){
-            const newpub=publication.books.filter(
-                (book)=>book!==req.params.isbn)
-                publication.books=newpub;
-                return;
-        }
+advent.delete("/delete/publication/:isbn/:id", async(req,res)=>{
+    const updatedPublication= await PublicationModel.findOneAndUpdate({
+        id:parseInt(req.params.id)
+    },{
+        books:req.params.isbn
+    },{
+        new : true
     })
-    database.books.forEach((book)=>{
-        if(book.ISBN===req.params.isbn){
-            book.publication=0
-            return;
-        }
+    const updatedBook= await BookModel.findOneAndUpdate({
+        ISBN:req.params.isbn
+    },{
+        publication=0
+    },{
+        new:true
     })
-    return res.json({book:database.books,pub:database.publications,message:"book is deleted"})
+  
+    return res.json({book:updatedBook,pub:updatedPublication,message:"book is deleted"})
 })
 
 advent.listen(3200,()=>console.log("server is fine"));
